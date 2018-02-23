@@ -9,6 +9,8 @@
 #include <TCanvas.h>
 #include <stdio.h>
 
+//Ellen Smellen's work!
+
 int Peak_Find(int start_file, int num_files, std::string folder) {
 
 	gROOT->SetBatch(kTRUE);
