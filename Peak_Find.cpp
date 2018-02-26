@@ -140,26 +140,30 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 
 			/*** Determine Background & Deviation ***/
 
+			double background;
+			double threshold;
+			double bkg_fit_end;
+			no_devs = 3; // Change for different threshold
+
 			TH1F *h2 = (TH1F*) h1->Clone();
-			TF1 *f1 = new TF1("f1", "[0]", C1.front(), C1.at(250));
+
+			TF1 *f1 = new TF1("f1", "[0]", C1.front(), C1.at(450));
 			h2->Fit(f1,"R");
-
-			auto background = f1->GetParameter(0);
-
-			no_devs = 3;
-			auto threshold = no_devs*f1->GetParError(0); // Decide here how many devations from background is threshold
-			// auto threshold = 1.25;
 
 			auto chi2 = f1->GetChisquare();
 
-			c1->cd(1);
-			TLine *line = new TLine(C1.front(), background + threshold, C1.back(), background + threshold);
-			line->SetLineStyle(2);
-			line->Draw("same");
 
 			/*** Save Plot if Large Deviation in Background ***/
 
-			if (chi2 > 10000) {
+			if (chi2 > 1.0) {
+
+				TF1 *f2 = new TF1("f2", "[0]", C1.front(), C1.at(250));
+				h2->Fit(f2,"R");
+
+				bkg_fit_end = C1.at(250);
+
+				background = f2->GetParameter(0);
+				threshold = no_devs*f2->GetParError(0);
 
 				TCanvas *c2 = new TCanvas("c2","c2", 10, 10, 1000, 900);
 
@@ -167,7 +171,7 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				h1->GetYaxis()->SetTitle("millivolt");
 				h1->Draw();
 
-				TLine *l = new TLine(C1.front(), background, C1.at(250), background);
+				TLine *l = new TLine(C1.front(), f1->GetParameter(0), C1.at(450), f1->GetParameter(0));
 				l->SetLineColor(2);
 				l->SetLineWidth(2);
 				l->Draw("same");
@@ -176,11 +180,31 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				c2->SaveAs(chi2_plot_name.c_str());
 
 				delete c2;
+
+			} else {
+
+				bkg_fit_end = C1.at(450);
+
+				background = f1->GetParameter(0);
+				threshold = no_devs*f1->GetParError(0);
+
 			}
+
+			// auto threshold = 1.25;
+
+			c1->cd(1);
+
+			TLine *line_pos = new TLine(C1.front(), background + threshold, C1.back(), background + threshold);
+			line_pos->SetLineStyle(2);
+			line_pos->Draw("same");
+
+			TLine *line_neg = new TLine(C1.front(), background - threshold, C1.back(), background - threshold);
+			line_neg->SetLineStyle(2);
+			line_neg->Draw("same");
 
 			/*** Find Peaks Above Threshold ***/
 
-			std::vector<int> above_bkg_starts, above_bkg_ends;
+			std::vector<int> above_bkg_starts, above_bkg_ends, below_bkg_starts, below_bkg_ends;
 
 			for (Int_t i = 0; i < C2.size() - 1; i++) {
 				if (C2.at(i) > background) {
@@ -192,10 +216,19 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 							break;
 						}
 					}
+				} else if (C2.at(i) < background) {
+					for (Int_t j = i + 1; j < C2.size(); j++) {
+						if (C2.at(j) > background) {
+							below_bkg_starts.push_back(i);
+							below_bkg_ends.push_back(j);
+							i = j;
+							break;
+						}
+					}
 				}
 			}
 
-			std::vector<int> peak_starts, peak_ends;
+			std::vector<int> peak_starts, peak_ends, peak_starts_neg, peak_ends_neg;
 
 			int no_peaks = 0;
 			for (Int_t i = 0; i < above_bkg_starts.size(); i++) {
@@ -205,6 +238,16 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 						peak_ends.push_back(above_bkg_ends.at(i));
 						no_peaks += 1;
 						total_no_peaks += 1;
+						break;
+					}
+				}
+			}
+
+			for (Int_t i = 0; i < below_bkg_starts.size(); i++) {
+				for (Int_t j = below_bkg_starts.at(i); j < below_bkg_ends.at(i); j++) {
+					if (C2.at(j) < background - threshold) {
+						peak_starts_neg.push_back(below_bkg_starts.at(i));
+						peak_ends_neg.push_back(below_bkg_ends.at(i));
 						break;
 					}
 				}
@@ -227,7 +270,7 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 			}
 
 			if (pulse_it != 0) {
-				std::cout << "Pulse in Background!" << std::endl;
+				std::cout << "There is a pulse before the peak!" << std::endl;
 				pulse_bkg_files.push_back(i);
 			}
 
@@ -288,14 +331,18 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				l1->SetLineWidth(2);
 				l1->Draw("same");
 
-				TLine *l2 = new TLine(C1.front(), background, C1.at(250), background);
-				l2->SetLineColor(2);
+				TLine *l2 = new TLine(C1.front(), background - threshold, C1.back(), background - threshold);
+				l2->SetLineStyle(2);
 				l2->SetLineWidth(2);
 				l2->Draw("same");
 
+				TLine *l3 = new TLine(C1.front(), background, bkg_fit_end, background);
+				l3->SetLineColor(2);
+				l3->SetLineWidth(2);
+				l3->Draw("same");
+
 				std::string count_plot_name = OutputDirectory + "plots/count/" + fileno + filetype_plot;
 				c3->SaveAs(count_plot_name.c_str());
-				c3->SaveAs("test.root");
 
 				delete c3;
 			}
@@ -320,7 +367,7 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 
 			/*** Determine if there is any After Pulsing ***/
 
-			std::vector<int> ap_starts, ap_ends;
+			std::vector<int> ap_starts, ap_ends, ap_starts_neg, ap_ends_neg;
 
 			for (Int_t i = 1; i < peak_ends.size(); i++) {
 				if (peak_starts.at(i) < ap_end_it) {
@@ -329,10 +376,17 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				}
 			}
 
+			for (Int_t i = 0; i < peak_ends_neg.size(); i++) {
+				if (peak_starts_neg.at(i) < ap_end_it) {
+					ap_starts_neg.push_back(peak_starts_neg.at(i));
+					ap_ends_neg.push_back(peak_ends_neg.at(i));
+				}
+			}
+
 			/*** Determine Peak Height (Max) ***/
 
 			auto max = *std::max_element(C2.begin(), C2.end());
-			peaks_max.push_back(max - f1->GetParameter(0));
+			peaks_max.push_back(max - background);
 
 			/*** Draw Histograms Set at Baseline ***/
 				
@@ -340,7 +394,7 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 
 			TH1F *h3 = new TH1F("h3", "", C1.size(), C1.front(), C1.back());
 			for (Int_t i = 0; i < C2.size() ; i++) {
-				h3->SetBinContent(i, C2.at(i) - f1->GetParameter(0));
+				h3->SetBinContent(i, C2.at(i) - background);
 			}
 
 			h3->GetXaxis()->SetTitle(x_unit.c_str());
@@ -368,18 +422,32 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 			/*** Determine After Pulsing Area ***/
 
 			std::vector<double> ap_areas;
-			double total_ap_area = 0;
 
-			for (Int_t i = 0; i < ap_starts.size() ; i++) {
+			double total_ap_area_pos = 0;
+
+			for (Int_t i = 0; i < ap_starts.size(); i++) {
 				double ap_area = 0;
 				for (Int_t j = ap_starts.at(i); j < ap_ends.at(i); j++) {
 					ap_area += h3->GetBinContent(j)*binwidth;
 				}
 				ap_areas.push_back(ap_area);
-				total_ap_area += ap_area;
+				total_ap_area_pos += ap_area;
 			}
 
+			double total_ap_area_neg = 0;
+
+			for (Int_t i = 0; i < ap_starts_neg.size(); i++) {
+				double ap_area = 0;
+				for (Int_t j = ap_starts_neg.at(i); j < ap_ends_neg.at(i); j++) {
+					ap_area += h3->GetBinContent(j)*binwidth;
+				}
+				ap_areas.push_back(ap_area);
+				total_ap_area_neg += ap_area;
+			}
+
+			double total_ap_area = total_ap_area_pos + total_ap_area_neg;
 			double total_ap_percentage = (total_ap_area/peak_area)*100;
+
 			total_ap_percentages.push_back(total_ap_percentage);
 
 			/*** Calculate Percentage of Peak Area for After Pulses ***/
@@ -393,12 +461,12 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 
 			/*** Draw Peak Area ***/
 
-			auto legend = new TLegend(0.525, 0.625, 0.9, 0.9);
+			auto legend = new TLegend(0.425, 0.47, 0.9, 0.9);
 
 			TH1F *h4 = new TH1F("h4", "", C1.size(), C1.front(), C1.back());
 			for (Int_t i = 0; i < C2.size() ; i++) {
 				if (i < peak_ends.at(0) && i > peak_starts.at(0)) {
-					h4->SetBinContent(i, C2.at(i) + abs(f1->GetParameter(0)));
+					h4->SetBinContent(i, C2.at(i) + abs(background));
 				} else { 
 					h4->SetBinContent(i, 0);
 				}
@@ -418,7 +486,7 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				TH1F *h = new TH1F("", "", C1.size(), C1.front(), C1.back());
 				for (Int_t j = 0; j < C2.size(); j++) {
 					if (j < ap_ends.at(i) && j > ap_starts.at(i)) {
-						h->SetBinContent(j, C2.at(j) + abs(f1->GetParameter(0)));
+						h->SetBinContent(j, C2.at(j) + abs(background));
 					} else { 
 						h->SetBinContent(j, 0);
 					}
@@ -433,18 +501,35 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 				h->Draw("same"); 
 			}
 
-			std::stringstream ss1, ss2;
-			ss1 << total_ap_area;
-			ss2 << total_ap_percentage;
-			std::string myString2 = "summed area: " + ss1.str() + " psV - " + ss2.str() + " % of signal area";
+			for (Int_t i = 0; i < ap_starts_neg.size() ; i++) {
+				TH1F *h = new TH1F("", "", C1.size(), C1.front(), C1.back());
+				for (Int_t j = 0; j < C2.size(); j++) {
+					if (j < ap_ends_neg.at(i) && j > ap_starts_neg.at(i)) {
+						h->SetBinContent(j, C2.at(j) + abs(background));
+					} else { 
+						h->SetBinContent(j, 0);
+					}
+				}
 
-   			legend->AddEntry((TObject*)0, myString2.c_str(), "");
+				stringstream ss;
+				ss << ap_percentages.at(ap_starts.size() + i);
+				std::string myString = ss.str() + " % of signal area";
+
+				legend->AddEntry(h, myString.c_str(), "f");
+				h->SetFillColor(ap_starts.size() + i + 2);
+				h->Draw("same"); 
+			}
 
 			if (no_peaks != 0) {
 				if (ap_areas.size() == 0 ) {
 					gStyle->SetLegendTextSize(0.05);
 				} else {
-					gStyle->SetLegendTextSize(0.);
+					std::stringstream ss1, ss2;
+					ss1 << total_ap_area;
+					ss2 << total_ap_percentage;
+					std::string myString2 = "summed area: " + ss1.str() + " psV : " + ss2.str() + " % of signal area";
+					legend->AddEntry((TObject*)0, myString2.c_str(), "");
+					gStyle->SetLegendTextSize(0.03);
 				}
 				legend->Draw();
 			}
@@ -456,9 +541,14 @@ int Peak_Find(int start_file, int num_files, std::string folder) {
 			line1->SetLineColor(2);
 			line1->SetLineWidth(2);
 			line1->Draw("same");
+
 			TLine *line2 = new TLine(C1.front(), threshold, C1.back(), threshold);
 			line2->SetLineStyle(2);
 			line2->Draw("same");
+
+			TLine *line3 = new TLine(C1.front(), -1*threshold, C1.back(), -1*threshold);
+			line3->SetLineStyle(2);
+			line3->Draw("same");
 
 			h3->SetStats(kFALSE);
 			h4->SetStats(kFALSE);
