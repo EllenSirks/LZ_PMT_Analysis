@@ -67,19 +67,16 @@ Double_t finalFunc(Double_t *x, Double_t *par) {
 					x0 = par[1] + signalindex * par[6];
 					total = total + areatotal * TMath::Exp(-0.5 * (x[0]-x0) * (x[0]-x0)/ sigma / sigma)/(2.50663 * sigma);
 				}
-			} //end of else
-		} //end of for kindex loop 
-	} //end of for index loop
-
+			}
+		}
+	}
 	return total;
 }
 
 
 Double_t plotpe( Double_t *x, Double_t *par) { 
-
 	return par[0] * TMath::Exp( -par[3]) * TMath::Exp( -par[4]) * TMath::Exp( -0.5 * (x[0] - par[1]) * ( x[0] - par[1])/ par[2] / par[2]) / (2.50663 * par[2]) ;
 }
-
 
 Double_t plotsi1( Double_t *x, Double_t *par) {
 
@@ -194,12 +191,11 @@ void mainfit_FloatScales(std::string folder) {
 	int channel, t, num, jk, Nbins, xmax;
 
 	TCanvas *cw = new TCanvas("cw","MaPMTs Test", 200, 10, 650, 500);
+	// cw->SetLogy();
+	gPad->SetLogy();
 
-	Nbins = 300;	// should be 200 for 1000V, and 100 for 900V
-	// xmax = 2000;	// should be 2000 for 1000V, and 1000 for 900V
+	Nbins = 300;
 	xmax = 200;	
-	TH1F *h = new TH1F("h", "MaPMT histogram", Nbins, 0, xmax);
-	TH1F *h0 = new TH1F("h0", "MaPMT histogram0", Nbins, 0, xmax);
 
 	std::cout << "The input file is: " << inputname << std::endl;
 
@@ -215,6 +211,11 @@ void mainfit_FloatScales(std::string folder) {
 		} 
 		v.push_back(a);
 	}
+
+	// xmax = *std::max_element(std::begin(v), std::end(v));
+
+	TH1F *h = new TH1F("h", "MaPMT histogram", Nbins, 0, xmax);
+	TH1F *h0 = new TH1F("h0", "MaPMT histogram0", Nbins, 0, xmax);
 
 	for (const auto &val : v) {
 		h->Fill(val);
@@ -307,81 +308,80 @@ void mainfit_FloatScales(std::string folder) {
 	h->GetYaxis()->CenterTitle();
 	h->GetYaxis()->SetTitleOffset(1.15);
 	h->GetYaxis()->SetTitleSize(0.04);
-	h->GetYaxis()->SetRangeUser(0, 2000); //for linear y-axis
 	h->GetXaxis()->SetTitle("x");
 	h->Draw();
 			
 	pgaddfit1->Draw("same");
 			
-	//TF1 *totalf = new TF1("totalf",finalFunc, 0, xmax, 6);
-	//totalf->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5]);
-	//totalf->SetLineColor(kBlack);
-	//totalf->SetLineWidth(2);
-	//totalf->Draw("same");
+	TF1 *totalf = new TF1("totalf",finalFunc, 0, xmax, 6);
+	totalf->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5]);
+	totalf->SetLineColor(kBlack);
+	totalf->SetLineWidth(2);
+	totalf->Draw("same");
 
-	// TF1 *pedesf = new TF1("pedesf",plotpe, 0, xmax, 5);
-	// pedesf->SetParameters(para[0], para[1], para[2], para[4], para[5]);
-	// pedesf->SetLineColor(kBlue);
-	// pedesf->SetLineWidth(1);
-	// pedesf->Draw("same");
+	TF1 *pedesf = new TF1("pedesf",plotpe, 0, xmax, 5);
+	pedesf->SetParameters(para[0], para[1], para[2], para[4], para[5]);
+	pedesf->SetLineColor(kBlue);
+	pedesf->SetLineWidth(2);
+	pedesf->Draw("same");
 
-	// TF1 *signalf = new TF1("signalf", plotsi1, 0, xmax, 8);
-	// signalf->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
-	// signalf->SetLineColor(30); //dull green
-	// signalf->SetLineWidth(2);
-	// signalf->Draw("same");
+	TF1 *signalf = new TF1("signalf", plotsi1, 0, xmax, 8);
+	signalf->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
+	signalf->SetLineColor(30); //dull green
+	signalf->SetLineWidth(2);
+	signalf->Draw("same");
 
-	// TF1 *signalf2 = new TF1("signalf2", plotsi2, 0, xmax, 8);
-	// signalf2->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
-	// signalf2->SetLineColor(50); //sandstone red
-	// signalf2->SetLineWidth(2);
-	// signalf2->Draw("same");
+	TF1 *signalf2 = new TF1("signalf2", plotsi2, 0, xmax, 8);
+	signalf2->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
+	signalf2->SetLineColor(50); //sandstone red
+	signalf2->SetLineWidth(2);
+	signalf2->Draw("same");
 
-	// TF1 *signalf3 = new TF1("signalf3", plotsi3, 0, xmax, 8);
-	// signalf3->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
-	// signalf3->SetLineColor(6); //bright pink
-	// signalf3->SetLineWidth(2);
-	// signalf3->Draw("same");
+	TF1 *signalf3 = new TF1("signalf3", plotsi3, 0, xmax, 8);
+	signalf3->SetParameters(para[0], para[1], para[2], para[3], para[4], para[5], para[6], para[7]);
+	signalf3->SetLineColor(6); //bright pink
+	signalf3->SetLineWidth(2);
+	signalf3->Draw("same");
 
-	// Double_t XTalkGain = para[3] * XTalkGainRatio; //XTalk gain
-	// TF1 *xtalkf = new TF1("xtalkf", plotsi1, 0, xmax, 8);
-	// xtalkf->SetParameters(para[0], para[1], para[2], XTalkGain, para[5], para[4], para[6], para[7]);
-	// xtalkf->SetLineColor(40); //grey
-	// xtalkf->SetLineWidth(2);
-	// xtalkf->Draw("same");
+	Double_t XTalkGain = para[3] * XTalkGainRatio; //XTalk gain
+	TF1 *xtalkf = new TF1("xtalkf", plotsi1, 0, xmax, 8);
+	xtalkf->SetParameters(para[0], para[1], para[2], XTalkGain, para[5], para[4], para[6], para[7]);
+	xtalkf->SetLineColor(40); //grey
+	xtalkf->SetLineWidth(2);
+	xtalkf->Draw("same");
 									
-	// TF1 *xtalkf2 = new TF1("xtalkf2", plotsi2, 0, xmax, 8); //two XTalk p.e.
-	// xtalkf2->SetParameters(para[0], para[1], para[2], XTalkGain, para[5], para[4], para[6], para[7]);
-	// xtalkf2->SetLineColor(20); //beige
-	// xtalkf2->SetLineWidth(2);
-	// xtalkf2->Draw("same");
+	TF1 *xtalkf2 = new TF1("xtalkf2", plotsi2, 0, xmax, 8); //two XTalk p.e.
+	xtalkf2->SetParameters(para[0], para[1], para[2], XTalkGain, para[5], para[4], para[6], para[7]);
+	xtalkf2->SetLineColor(20); //beige
+	xtalkf2->SetLineWidth(2);
+	xtalkf2->Draw("same");
 												
-	// TF1 *signalplusxtalkf = new TF1("signalplusxtalkf", plotsignalplusxtalk, 0, xmax, 9); //1+1
-	// signalplusxtalkf->SetParameters(para[0], para[1], para[2], para[3], para[4], XTalkGain, para[5], para[6], para[7]);
-	// signalplusxtalkf->SetLineColor(7); //aquamarine
-	// signalplusxtalkf->SetLineWidth(2);
-	// signalplusxtalkf->Draw("same");
+	TF1 *signalplusxtalkf = new TF1("signalplusxtalkf", plotsignalplusxtalk, 0, xmax, 9); //1+1
+	signalplusxtalkf->SetParameters(para[0], para[1], para[2], para[3], para[4], XTalkGain, para[5], para[6], para[7]);
+	signalplusxtalkf->SetLineColor(7); //aquamarine
+	signalplusxtalkf->SetLineWidth(2);
+	signalplusxtalkf->Draw("same");
 
 	TLegend *leg = new TLegend(0.58, 0.55, 0.9, 0.9);
 	leg->SetTextFont(30);
 	leg->SetTextSize(0.03);
 	leg->AddEntry(pgaddfit1, "global fit", "l");
-	// leg->AddEntry(pedesf, "pedestal", "l");
-	// leg->AddEntry(signalf, "one photoel", "l");
-	// leg->AddEntry(signalf2, "two photoel", "l");
-	// leg->AddEntry(signalf3, "three photoel", "l");
-	// leg->AddEntry(xtalkf, "one Xtalk phe", "l");
-	// leg->AddEntry(xtalkf2, "two Xtalk phe", "l");
-	// leg->AddEntry(signalplusxtalkf, "one signal, one Xtalk", "l");
+	leg->AddEntry(pedesf, "pedestal", "l");
+	leg->AddEntry(signalf, "one photoel", "l");
+	leg->AddEntry(signalf2, "two photoel", "l");
+	leg->AddEntry(signalf3, "three photoel", "l");
+	leg->AddEntry(xtalkf, "one Xtalk phe", "l");
+	leg->AddEntry(xtalkf2, "two Xtalk phe", "l");
+	leg->AddEntry(signalplusxtalkf, "one signal, one Xtalk", "l");
 	leg->Draw();
 
 	h->SetStats(0);
 	cw->SaveAs(outputname_plot.c_str());
 	cw->SaveAs(outputname_root.c_str());
 
-	delete cw;
-	delete h;
-	delete h0;
-	delete pgaddfit1;		
+	// delete cw;
+	// delete h;
+	// delete h0;
+	// delete pgaddfit1;		
 			
 	}
