@@ -57,11 +57,11 @@ class temp_plot:
 		plt.legend(loc='best')
 		plt.xlabel('time (hr after start)', fontsize=15)
 		plt.ylabel('T (K)', fontsize=15)
-		plt.title('23-11-2017')
+		# plt.title('23-11-2017')
 		plt.xlim([self.time[0],self.time[-1]])
 		plt.show()
 		plt.close(fig)
-		fig.savefig('/home/ellen/Desktop/MPhys_Project/temp_plots/23112017Cooldown+Warmup_subplot.png')
+		fig.savefig('/home/ellen/Desktop/MPhys_Project/temp_plots/06122017Cooldown+Warmup_subplot.png')
 
 		diff = [self.temp_B[i] - self.temp_A[i] for i in range(len(self.temp_A))]
 		fig = plt.figure()
@@ -72,12 +72,12 @@ class temp_plot:
 		plt.legend(loc='best')
 		plt.xlabel('time (hr after start)', fontsize=15)
 		plt.ylabel(r'$\Delta$T (K)', fontsize=15)
-		plt.title('23-11-2017')
+		# plt.title('23-11-2017')
 		plt.xlim([self.time[0],self.time[-1]])
 		plt.show()
 		plt.close(fig)
-		fig.savefig('/home/ellen/Desktop/MPhys_Project/temp_plots/23112017Cooldown+Warmup_diff_subplot.png')
+		fig.savefig('/home/ellen/Desktop/MPhys_Project/temp_plots/06122017Cooldown+Warmup_diff_subplot.png')
 
-test = temp_plot('/home/ellen/Desktop/MPhys_Project/temp_files/23112017CoolDown+Warmup.csv')
+test = temp_plot('/home/ellen/Desktop/MPhys_Project/temp_files/06122017Cooldown+Warmup.csv')
 diff = test.temp_plot()
 
