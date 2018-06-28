@@ -15,12 +15,20 @@ int Gain(int start_file, int num_files, std::string folder) {
 	gErrorIgnoreLevel = kWarning;
 	gPrintViaErrorHandler = kTRUE;
 
+	/*** Choose Channel ***/
+
+	std::string input = "";
+
+	std::cout << "What channel (A or B) do you wish to analyse?" << std::endl;
+	getline(cin, input);
+ 	std::cout << "You entered channel: " << input << std::endl; 
+
 	/*** Create Paths ***/
 
 	std::string OutputDirectory = "/home/ellen/Desktop/MPhys_Project/Output/" + folder + "_output/";
 	std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
 	std::string DataFileName = folder + "_";
-	std::string HistogramName = "histograms/" + folder + "_";
+	std::string HistogramName = input + "/histograms/" + folder + "_";
 	std::string filetype_data = ".csv", filetype_plot = ".png";
 
 	std::vector<int> skipped_files, no_peaks_per_file, pulse_bkg_files;
@@ -67,10 +75,10 @@ int Gain(int start_file, int num_files, std::string folder) {
 		/*** Read in Data ***/
 
 		std::ifstream myfile(filename);
-		std::vector<double> C1, C2, C3;
+		std::vector<double> C1, C2;
 		int line_no = 0;
 
-		for (std::string col1, col2; std::getline(myfile, col1, ',') && std::getline(myfile, col2);) {
+		for (std::string col1, col2, col3; std::getline(myfile, col1, ',') && std::getline(myfile, col2, ',') && std::getline(myfile, col3);) {
 			if (line_no == 1) {
 				if (col1 == "(us)") {
 		    		x_unit = "microseconds";
@@ -81,7 +89,11 @@ int Gain(int start_file, int num_files, std::string folder) {
 				}
 			} else if (line_no > 2) {
 				C1.push_back(strtod(col1.c_str(), NULL));
-				C2.push_back(strtod(col2.c_str(), NULL));
+				if ( input == "A") {
+ 					C2.push_back(strtod(col2.c_str(), NULL));
+ 				} else {
+ 					C2.push_back(strtod(col3.c_str(), NULL));
+ 				}
 			}
 			line_no++;
 		}
@@ -185,7 +197,11 @@ int Gain(int start_file, int num_files, std::string folder) {
 					l->SetLineWidth(2);
 					l->Draw("same");
 
-					std::string chi2_plot_name = OutputDirectory + "plots/chi2/" + fileno + filetype_plot;
+					std::string chi2_plot_name = OutputDirectory + input + "/plots/chi2/" + fileno;
+					chi2_plot_name.append("_");
+					chi2_plot_name.append(input);
+					chi2_plot_name.append(filetype_plot);
+
 					// c2->SaveAs(chi2_plot_name.c_str());
 
 					delete c2;
@@ -200,7 +216,7 @@ int Gain(int start_file, int num_files, std::string folder) {
 				}
 			}
 
-			// threshold = 1.25; // Comment out if want to use std dev as threshold
+			threshold = 1.25; // Comment out if want to use std dev as threshold
 
 			c1->cd(1);
 
@@ -216,13 +232,41 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			// Peaks above/below background
 
+			// Set peak window
+
+			double start = 160.;
+			double end = 200.;
+
+			if (x_unit == "microseconds") {
+				end = end/pow(10, 3);
+			} else if (x_unit == "milliseconds") {
+				end = end/pow(10, 6);
+			}
+
+			auto it1 = 0;
+			auto it2 = 0;
+
+			for (Int_t i = 0; i < C1.size() ; i++) {
+				if (C1.at(i) < start) {
+					it1 = i;
+				}
+			}
+
+			for (Int_t i = 0; i < C1.size() ; i++) {
+				if (C1.at(i) > start && C1.at(i) < end) {
+					it2 = i;
+				}
+			}
+
 			std::vector<int> above_bkg_starts, above_bkg_ends, below_bkg_starts, below_bkg_ends;
 
 			double addition = 0.;
 
-			for (Int_t i = 0; i < C2.size() - 1; i++) {
+			// for (Int_t i = 0; i < C2.size() - 1; i++) {
+			for (Int_t i = it1; i < it2; i++) {
 				if (C2.at(i) > background + addition ) {
-					for (Int_t j = i + 1; j < C2.size(); j++) {
+					// for (Int_t j = i + 1; j < C2.size(); j++) {
+					for (Int_t j = i + 1; j < it2; j++) {
 						if (C2.at(j) < background + addition) {
 							above_bkg_starts.push_back(i);
 							above_bkg_ends.push_back(j);
@@ -231,7 +275,8 @@ int Gain(int start_file, int num_files, std::string folder) {
 						}
 					}
 				} else if (C2.at(i) < background) {
-					for (Int_t j = i + 1; j < C2.size(); j++) {
+					// for (Int_t j = i + 1; j < C2.size(); j++) {
+					for (Int_t j = i + 1; j < it2; j++) {
 						if (C2.at(j) > background) {
 							below_bkg_starts.push_back(i);
 							below_bkg_ends.push_back(j);
@@ -273,11 +318,6 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			/*** Check which Peak is in Window ***/
 
-			// Set peak window
-
-			double start = 45.;
-			double end = 70.;
-
 			if (no_peaks > 0) {
 
 				auto end_loop = peak_starts.size();
@@ -306,29 +346,6 @@ int Gain(int start_file, int num_files, std::string folder) {
 			/*** Determine Pulse Window if No Peak is Found ***/
 
 			if (peak_starts.size() == 0) { 
-
-				if (x_unit == "microseconds") {
-					end = end/pow(10, 3);
-				} else if (x_unit == "milliseconds") {
-					end = end/pow(10, 6);
-				}
-
-				auto it1 = 0;
-				auto it2 = 0;
-
-				// Comment out if want zero peak area for noise
-
-				for (Int_t i = 0; i < C1.size() ; i++) {
-					if (C1.at(i) < start) {
-						it1 = i;
-					}
-				}
-
-				for (Int_t i = 0; i < C1.size() ; i++) {
-					if (C1.at(i) > start && C1.at(i) < end) {
-						it2 = i;
-					}
-				}
 
 				peak_starts.push_back(it1);
 				peak_ends.push_back(it2);
@@ -387,7 +404,8 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			/*** Draw Peak Area ***/
 
-			auto legend = new TLegend(0.625, 0.67, 0.9, 0.9);
+			// auto legend = new TLegend(0.625, 0.67, 0.9, 0.9);
+			auto legend = new TLegend(0.1, 0.67, 0.375, 0.9);
 
 			TH1F *h4 = new TH1F("h4", "", C1.size(), C1.front(), C1.back());
 			for (Int_t i = 0; i < C2.size() ; i++) {
@@ -430,10 +448,15 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			/*** Save Plots ***/
 
-			std::string plot_name = OutputDirectory + HistogramName + fileno + "_peak_area" + filetype_plot;
-			std::string root_name = OutputDirectory + HistogramName + fileno + "_peak_area.root";
+			std::string plot_name = OutputDirectory + HistogramName + fileno + "_peak_area_";
+			plot_name.append(input);
+			plot_name.append(filetype_plot);
 
-			if (i - start_file + 1 < 21) {
+			std::string root_name = OutputDirectory + HistogramName + fileno + "_peak_area_";
+			root_name.append(input);
+			root_name.append(".root");
+
+			if (i - start_file + 1 < 101) {
 				c1->SaveAs(plot_name.c_str());
 				// c1->SaveAs(root_name.c_str());
 			}
@@ -450,7 +473,9 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 	/*** Create Files ***/
 
-	std::string Out = OutputDirectory + "specs/peak_area.txt";
+	std::string Out = OutputDirectory + input + "/specs/peak_area_";
+	Out.append(input);
+	Out.append(".txt");
 
 	std::ofstream out(Out);
 	for (const auto &area : peaks_area) {
@@ -458,7 +483,9 @@ int Gain(int start_file, int num_files, std::string folder) {
 	}
 
 	std::cout << "Skipped: " << skipped_files.size() << " Files" << std::endl;
-	std::string err_Out = OutputDirectory + "specs/skipped_files.txt";
+	std::string err_Out = OutputDirectory + input + "/specs/skipped_files_";
+	err_Out.append(input);
+	err_Out.append(".txt");
 
 	std::ofstream err_out(err_Out);
 	for (const auto &file : skipped_files) {
