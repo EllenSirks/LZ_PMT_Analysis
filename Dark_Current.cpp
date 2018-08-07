@@ -18,7 +18,8 @@ int Dark_Current(int start_file, int num_files, std::string folder) {
 	/*** Create Paths ***/
 
 	std::string OutputDirectory = "/home/ellen/Desktop/MPhys_Project/Output/" + folder + "_output/";
-	std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
+	// std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
+	std::string DataDirectory = "/home/ellen/Downloads/" + folder + "/";
 	std::string DataFileName = folder + "_";
 	std::string filetype_data = ".csv", filetype_plot = ".png";
 
@@ -230,7 +231,7 @@ int Dark_Current(int start_file, int num_files, std::string folder) {
 				l2->SetLineStyle(2);
 				l2->Draw("same");
 
-				std::string count_plot_name = OutputDirectory + "plots/count/" + fileno + filetype_plot;
+				std::string count_plot_name = OutputDirectory + input +  "/plots/count/" + fileno + "_" + input + filetype_plot;
 				c2->SaveAs(count_plot_name.c_str());
 
 				delete c2;
@@ -274,7 +275,7 @@ int Dark_Current(int start_file, int num_files, std::string folder) {
 
 	/*** Create Files ***/
 
-	std::string Out = OutputDirectory + "specs/peaks_per_file.txt";
+	std::string Out = OutputDirectory + input + "/specs/peaks_per_file_" + input + ".txt";
 
 	std::ofstream out(Out);
 	for (const auto &peaks : no_peaks_per_file) {
@@ -282,15 +283,14 @@ int Dark_Current(int start_file, int num_files, std::string folder) {
 	}
 
 	std::cout << "Skipped: " << skipped_files.size() << " Files" << std::endl;
-	std::string err_Out = OutputDirectory + "specs/skipped_files.txt";
 
+	std::string err_Out = OutputDirectory + input + "/specs/skipped_files_" + input + ".txt";
 	std::ofstream err_out(err_Out);
 	for (const auto &file : skipped_files) {
 		err_out << file << "\n";
 	}
 
-	std::string dark_count_Out = OutputDirectory + "specs/dark_count.txt";
-
+	std::string dark_count_Out = OutputDirectory + input + "/specs/dark_count_" + input + ".txt";
 	std::ofstream dark_count_out(dark_count_Out);
 	dark_count_out << dark_count_rate << " +/- " << dark_count_rate_err << " Hz \n";
 	dark_count_out << no_devs << " standard devations";
