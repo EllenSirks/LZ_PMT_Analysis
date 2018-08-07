@@ -27,6 +27,7 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 	std::string OutputDirectory = "/home/ellen/Desktop/MPhys_Project/Output/" + folder + "_output/";
 	std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
+	// std::string DataDirectory = "/home/ellen/Downloads/" + folder + "/";
 	std::string DataFileName = folder + "_";
 	std::string HistogramName = input + "/histograms/" + folder + "_";
 	std::string filetype_data = ".csv", filetype_plot = ".png";
@@ -71,6 +72,7 @@ int Gain(int start_file, int num_files, std::string folder) {
 		/*** Create File Path ***/
 
 		std::string filename = DataDirectory + DataFileName + fileno + filetype_data;
+		// std::cout << filename << std::endl;
 
 		/*** Read in Data ***/
 
@@ -234,8 +236,8 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			// Set peak window
 
-			double start = 160.;
-			double end = 200.;
+			double start = 300.;
+			double end = 400.;
 
 			if (x_unit == "microseconds") {
 				end = end/pow(10, 3);
@@ -351,6 +353,11 @@ int Gain(int start_file, int num_files, std::string folder) {
 				peak_ends.push_back(it2);
 
 			}
+
+			/*** Determine Peak Height (Max) ***/
+ 
+            auto max = *std::max_element(C2.begin(), C2.end());
+            peaks_max.push_back(max - background);
 
 			/*** Draw Histograms Set at Baseline ***/
 				
@@ -473,20 +480,21 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 	/*** Create Files ***/
 
-	std::string Out = OutputDirectory + input + "/specs/peak_area_";
-	Out.append(input);
-	Out.append(".txt");
-
+	std::string Out = OutputDirectory + input + "/specs/peak_area_" + input + ".txt";
 	std::ofstream out(Out);
 	for (const auto &area : peaks_area) {
 		out << area << "\n";
 	}
 
-	std::cout << "Skipped: " << skipped_files.size() << " Files" << std::endl;
-	std::string err_Out = OutputDirectory + input + "/specs/skipped_files_";
-	err_Out.append(input);
-	err_Out.append(".txt");
+	std::string Out_max = OutputDirectory  + input + "/specs/peak_heights_max_" + input + ".txt";
+    std::ofstream out_max(Out_max);
+    for (const auto &peak : peaks_max) {
+        out_max << peak << "\n";
+    }
 
+	std::cout << "Skipped: " << skipped_files.size() << " Files" << std::endl;
+
+	std::string err_Out = OutputDirectory + input + "/specs/skipped_files_" + input + ".txt";
 	std::ofstream err_out(err_Out);
 	for (const auto &file : skipped_files) {
 		err_out << file << "\n";
