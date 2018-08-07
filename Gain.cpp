@@ -26,8 +26,8 @@ int Gain(int start_file, int num_files, std::string folder) {
 	/*** Create Paths ***/
 
 	std::string OutputDirectory = "/home/ellen/Desktop/MPhys_Project/Output/" + folder + "_output/";
-	std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
-	// std::string DataDirectory = "/home/ellen/Downloads/" + folder + "/";
+	// std::string DataDirectory = "/media/Ellen/Elements/PMT_Data/" + folder + "/";
+	std::string DataDirectory = "/home/ellen/Downloads/" + folder + "/";
 	std::string DataFileName = folder + "_";
 	std::string HistogramName = input + "/histograms/" + folder + "_";
 	std::string filetype_data = ".csv", filetype_plot = ".png";
@@ -199,10 +199,7 @@ int Gain(int start_file, int num_files, std::string folder) {
 					l->SetLineWidth(2);
 					l->Draw("same");
 
-					std::string chi2_plot_name = OutputDirectory + input + "/plots/chi2/" + fileno;
-					chi2_plot_name.append("_");
-					chi2_plot_name.append(input);
-					chi2_plot_name.append(filetype_plot);
+					std::string chi2_plot_name = OutputDirectory + input + "/plots/chi2/" + fileno + "_" + input + filetype_plot;
 
 					// c2->SaveAs(chi2_plot_name.c_str());
 
@@ -218,7 +215,7 @@ int Gain(int start_file, int num_files, std::string folder) {
 				}
 			}
 
-			threshold = 1.25; // Comment out if want to use std dev as threshold
+			threshold = 1.75; // Comment out if want to use std dev as threshold
 
 			c1->cd(1);
 
@@ -320,30 +317,30 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			/*** Check which Peak is in Window ***/
 
-			if (no_peaks > 0) {
+			// if (no_peaks > 0) {
 
-				auto end_loop = peak_starts.size();
+			// 	auto end_loop = peak_starts.size();
 
-				int index = 0;
-				for (Int_t i = 0; i < end_loop; i++) {
-					if (C1.at(peak_starts.at(i - index)) < start) {
-						peak_starts.erase(peak_starts.begin() + i - index);
-						peak_ends.erase(peak_ends.begin() + i - index);
-						index += 1;
-					}
-				}
+			// 	int index = 0;
+			// 	for (Int_t i = 0; i < end_loop; i++) {
+			// 		if (C1.at(peak_starts.at(i - index)) < start) {
+			// 			peak_starts.erase(peak_starts.begin() + i - index);
+			// 			peak_ends.erase(peak_ends.begin() + i - index);
+			// 			index += 1;
+			// 		}
+			// 	}
 
-				end_loop = peak_starts.size();
+			// 	end_loop = peak_starts.size();
 
-				index = 0;
-				for (Int_t i = 0; i < end_loop; i++) {
-					if (C1.at(peak_starts.at(i - index)) > end) {
-						peak_starts.erase(peak_starts.begin() + i - index);
-						peak_ends.erase(peak_ends.begin() + i - index);
-						index += 1;
-					}
-				}
-			}
+			// 	index = 0;
+			// 	for (Int_t i = 0; i < end_loop; i++) {
+			// 		if (C1.at(peak_starts.at(i - index)) > end) {
+			// 			peak_starts.erase(peak_starts.begin() + i - index);
+			// 			peak_ends.erase(peak_ends.begin() + i - index);
+			// 			index += 1;
+			// 		}
+			// 	}
+			// }
 
 			/*** Determine Pulse Window if No Peak is Found ***/
 
@@ -455,13 +452,8 @@ int Gain(int start_file, int num_files, std::string folder) {
 
 			/*** Save Plots ***/
 
-			std::string plot_name = OutputDirectory + HistogramName + fileno + "_peak_area_";
-			plot_name.append(input);
-			plot_name.append(filetype_plot);
-
-			std::string root_name = OutputDirectory + HistogramName + fileno + "_peak_area_";
-			root_name.append(input);
-			root_name.append(".root");
+			std::string plot_name = OutputDirectory + HistogramName + fileno + "_peak_area_" + input + filetype_plot;
+			std::string root_name = OutputDirectory + HistogramName + fileno + "_peak_area_"+ input + ".root";
 
 			if (i - start_file + 1 < 101) {
 				c1->SaveAs(plot_name.c_str());
